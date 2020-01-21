@@ -12,11 +12,10 @@
 
 import time,sys
 import RPi.GPIO as GPIO
-import smbus2 as smbus
+import smbus
 
 # use the bus that matches your raspi version
 rev = GPIO.RPI_REVISION
-print(rev)
 if rev == 2 or rev == 3:
     bus = smbus.SMBus(1)
 else:
@@ -56,8 +55,21 @@ class motor_driver:
 		MotorSpeedA=self.map_vals(MotorSpeedA,0,100,0,255)
 		MotorSpeedB=self.map_vals(MotorSpeedB,0,100,0,255)
 		bus.write_i2c_block_data(self.I2CMotorDriverAdd, self.MotorSpeedSet, [MotorSpeedA,MotorSpeedB])
-
+		time.sleep(.02)
 
 	#Set motor direction
 	def MotorDirectionSet(self,Direction):
 		bus.write_i2c_block_data(self.I2CMotorDriverAdd, self.DirectionSet, [Direction,0])
+		time.sleep(.02)
+
+if __name__ == "__main__":
+	m= motor_driver()
+	steps = 0
+	while steps <= 100:
+		m.MotorSpeedSetAB(1,1)
+		m.MotorDirectionSet(0b1010)
+		time.sleep(0.1)
+		m.MotorSpeedSetAB(1,1)
+		m.MotorDirectionSet(0b0101)
+		time.sleep(0.1)
+		steps += 1

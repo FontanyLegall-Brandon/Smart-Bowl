@@ -41,36 +41,39 @@ THE SOFTWARE.
 import grove_i2c_motor_driver
 import time
 
-try:
-    # You can initialize with a different address too: grove_i2c_motor_driver.motor_driver(address=0x0a)
-    m = grove_i2c_motor_driver.motor_driver()
+def interstep():
+    time.sleep(0.1)
 
-    # FORWARD
-    print("Forward")
-    m.MotorSpeedSetAB(100, 100)  # defines the speed of motor 1 and motor 2;
-    m.MotorDirectionSet(
-        0b1010)  # "0b1010" defines the output polarity, "10" means the M+ is "positive" while the M- is "negtive"
-    time.sleep(2)
+def step(motor, dir, steps):
+    motor.MotorSpeedSetAB(100, 100)
 
-    # BACK
-    print("Back")
-    m.MotorSpeedSetAB(100, 100)
-    m.MotorDirectionSet(0b0101)  # 0b0101  Rotating in the opposite direction
-    time.sleep(2)
+    for i in range(steps // 4):
+        motor.MotorDirectionSet(0b0001)
+        motor.MotorDirectionSet(0b0101)
+        motor.MotorDirectionSet(0b0100)
+        motor.MotorDirectionSet(0b0110)
+        motor.MotorDirectionSet(0b0010)
+        motor.MotorDirectionSet(0b1010)
+        motor.MotorDirectionSet(0b1000)
+        motor.MotorDirectionSet(0b1001)
+        interstep()
 
-    # STOP
-    print("Stop")
-    m.MotorSpeedSetAB(0, 0)
-    time.sleep(1)
+    motor.MotorSpeedSetAB(0, 0)
+    motor.MotorDirectionSet(0b0001)
 
-    # Increase speed
-    for i in range(100):
-        print("Speed:", i)
-        m.MotorSpeedSetAB(i, i)
-        time.sleep(.02)
+m = None
+con = False
+while not con:
+    try:
+        m = grove_i2c_motor_driver.motor_driver(address=0x0f)
+        m.MotorSpeedSetAB(100, 100)
+    except IOError:
+        continue
+    con = True
 
-    print("Stop")
-    m.MotorSpeedSetAB(0, 0)
 
-except IOError:
-    print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
+# You can initialize with a different address too: grove_i2c_motor_driver.motor_driver(address=0x0a)
+
+step(m, 'CLK', 400)
+
+
