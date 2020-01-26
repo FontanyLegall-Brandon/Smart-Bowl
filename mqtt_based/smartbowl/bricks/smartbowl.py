@@ -1,12 +1,15 @@
 import paho.mqtt.client as mqtt
-from urllib.parse import urlparse
-import logging
+from urlparse import urlparse
 import json
 import random
 import schedule
+import motor
 
 class Smartbowl:
+    motor = None
+
     def __init__(self, mqtt_cloud_url, mqtt_rasp_url):
+        self.motor = motor.Motor()
         self.shared_topics = ['test', 'bowl-action']
 
         # Configure mqtt clients
@@ -55,7 +58,8 @@ class Smartbowl:
     def process_bowl_action(self, payload):
         payload = json.loads(payload)
         if payload['ACTION'] == "OPEN":
-            print("MOCKUP : OPENING BOWL")
+            print("OPENING BOWL")
+            self.motor.open()
         if payload['ACTION'] == "CLOSE":
             print("MOCKUP : CLOSING BOWL")
 
