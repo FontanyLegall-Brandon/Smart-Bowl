@@ -4,12 +4,16 @@ import json
 import random
 import schedule
 import motor
+import camera
 
 class Smartbowl:
     motor = None
+    camera = None
 
     def __init__(self, mqtt_cloud_url, mqtt_rasp_url):
         self.motor = motor.Motor()
+        self.camera = camera.Camera()
+
         self.shared_topics = ['test', 'bowl-action']
 
         # Configure mqtt clients
@@ -62,6 +66,11 @@ class Smartbowl:
             self.motor.open()
         if payload['ACTION'] == "CLOSE":
             print("MOCKUP : CLOSING BOWL")
+        if payload['ACTION'] == "TAKE PICTURE":
+            print("TAKING PICTURE")
+            imageName = self.camera.capture()
+            self.camera.send(imageName, self.cloud_mqtt)
+
 
     def redirect_message(self, topic, qos, payload):
         payload = payload.decode('utf-8')
