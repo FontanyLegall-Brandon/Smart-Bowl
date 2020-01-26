@@ -103,6 +103,7 @@ mqttc_rasp.connect(url_rasp.hostname, url_rasp.port)
 mqttc.subscribe(topic, 0)
 mqttc.subscribe("bowl-action", 1)
 mqttc_rasp.subscribe("test", 0)
+mqttc_rasp.subscribe("bowl-action", 1)
 
 # Publish a message
 #mqttc.publish(topic, "my message")
@@ -112,7 +113,7 @@ def job():
     mqttc.publish('test', "0.25")
     mqttc_rasp.publish('test', "0.25")
 
-schedule.every(1).seconds.do(job)
+schedule.every(30).seconds.do(job)
 
 # Continue the network loop, exit when an error occurs
 rc = 0
