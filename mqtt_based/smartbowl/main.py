@@ -1,9 +1,13 @@
+#! /bin/python3
+
 import paho.mqtt.client as mqtt
 import os
 from urllib.parse import urlparse
 import schedule
 import json
 from bricks.smartbowl import *
+
+
 
 """
 Entry point of smartbowl
