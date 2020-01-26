@@ -14,7 +14,7 @@ class Smartbowl:
         self.motor = motor.Motor()
         self.camera = camera.Camera()
 
-        self.shared_topics = ['test', 'bowl-action']
+        self.shared_topics = ['test', 'bowl-action', 'picture']
 
         # Configure mqtt clients
         self.cloud_mqtt = mqtt.Client()
@@ -69,7 +69,9 @@ class Smartbowl:
         if payload['ACTION'] == "TAKE PICTURE":
             print("TAKING PICTURE")
             imageName = self.camera.capture()
-            self.camera.send(imageName, self.cloud_mqtt)
+            encoded = self.camera.encode(imageName)
+            print encoded
+            self.cloud_mqtt.publish('picture', encoded)
 
 
     def redirect_message(self, topic, qos, payload):
@@ -77,6 +79,8 @@ class Smartbowl:
         print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))
 
         if topic == "bowl-action":
+            self.process_bowl_action(payload)
+        if topic == "picture":
             self.process_bowl_action(payload)
 
     def on_connect(self, client, userdata, flags, rc):
