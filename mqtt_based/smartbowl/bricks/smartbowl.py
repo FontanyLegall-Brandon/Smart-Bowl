@@ -71,11 +71,12 @@ class Smartbowl:
             self.motor.open()
         if payload['ACTION'] == "CLOSE":
             print("MOCKUP : CLOSING BOWL")
+            self.motor.close()
         if payload['ACTION'] == "TAKE PICTURE":
             print("TAKING PICTURE")
             imageName = self.camera.capture()
             encoded = self.camera.encode(imageName)
-            print encoded
+            print(encoded)
             self.cloud_mqtt.publish('picture', encoded)
 
 
