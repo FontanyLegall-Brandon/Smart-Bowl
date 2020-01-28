@@ -5,16 +5,19 @@ import random
 import schedule
 import motor
 import camera
+import supersonic
 
 class Smartbowl:
     motor = None
     camera = None
+    supersonic = None
 
     def __init__(self, mqtt_cloud_url, mqtt_rasp_url):
         self.motor = motor.Motor()
         self.camera = camera.Camera()
+        self.supersonic = supersonic.Supersonic()
 
-        self.shared_topics = ['test', 'bowl-action', 'picture']
+        self.shared_topics = ['test', 'bowl-action', 'picture', 'supersonic']
 
         # Configure mqtt clients
         self.cloud_mqtt = mqtt.Client()
@@ -34,6 +37,7 @@ class Smartbowl:
 
         self.start()
 
+
     def start(self):
         # Continue the network loop, exit when an error occurs
         rc = 0
@@ -42,6 +46,8 @@ class Smartbowl:
             schedule.run_pending()
             rc = self.cloud_mqtt.loop()
             rc_rasp = self.rasp_mqtt.loop()
+            print("supersonic : " + str(self.supersonic.detect()))
+            self.cloud_mqtt.publish('supersonic', str(self.supersonic.detect()))
         print("rc: " + str(rc))
         print("rc_rasp: " + str(rc_rasp))
 
