@@ -80,6 +80,9 @@ class Motor:
     def open(self):
         self.step('CLK', 400)
 
+    def close(self):
+        self.step('CLK', 400)
+
 if __name__ == "__main__":
     tryMotor = Motor()
     tryMotor.open()
