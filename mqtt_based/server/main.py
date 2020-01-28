@@ -22,7 +22,7 @@ def sendEmail(name, email):
     msg['Subject'] = "This is TEST"
 
     # add in the message body
-    message = 'Salut ' + name + ', vous avez gagné un Iphone 10.'
+    message = 'Salut ' + name + ', vous n\'avez plus de nourriture dans le réservoir de votre smartbowl.'
     msg.attach(MIMEText(message, 'plain'))
 
     # send the message via the server set up earlier.
@@ -56,7 +56,7 @@ def process_bowl_action(msg):
 def process_bowl_status(msg):
     if msg == "NO FOOD":
         print("sending mail")
-        sendEmail('Brandon', 'brandon@fontany-legall.xyz')
+        sendEmail('Aymeric', 'aymericvaldenaire@hotmail.fr')
     elif msg == "OPENED" or msg == "CLOSED":
         print("BOWLSTATUS: " + msg)
         sendToClient(msg)
