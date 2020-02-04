@@ -41,7 +41,7 @@ THE SOFTWARE.
 import grove_i2c_motor_driver
 import time
 import switch
-
+import time
 class Motor:
     motor = None
     con = False
@@ -51,6 +51,7 @@ class Motor:
         self.switch = switch.Switch()
         while not self.con:
             print("NO CONN")
+            time.sleep(0.5)
             try:
                 self.motor = grove_i2c_motor_driver.motor_driver(address=0x0f)
                 self.motor.MotorSpeedSetAB(100, 100)
@@ -59,12 +60,12 @@ class Motor:
             self.con = True
         while not self.switch.isPressed():
             print(self.switch.isPressed())
-            self.motor.MotorSpeedSetAB(100,100)
-            self.step('CLK', 10)
 
+            self.step('CLK', 4)
+        self.motor.MotorSpeedSetAB(0, 0)
 
     def interstep(self):
-        time.sleep(0.1)
+        time.sleep(0.001)
 
     def step(self, dir, steps):
 
@@ -82,8 +83,8 @@ class Motor:
             self.motor.MotorDirectionSet(0b1001)
             self.interstep()
 
-        self.motor.MotorSpeedSetAB(0, 0)
-        self.motor.MotorDirectionSet(0b0001)
+        #self.motor.MotorSpeedSetAB(0, 0)
+        #self.motor.MotorDirectionSet(0b0001)
 
     def open(self):
         self.step('CLK', 400)
