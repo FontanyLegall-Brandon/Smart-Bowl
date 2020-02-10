@@ -1,12 +1,18 @@
 import paho.mqtt.client as mqtt
 import os
 from urllib.parse import urlparse
+
+import requests
 import schedule
 import json
 import smtplib
+import ics
+
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from ics import Calendar
 
 s = smtplib.SMTP(host='mail.hamlab.fr', port=587)
 s.starttls()
@@ -134,6 +140,11 @@ def job():
     global mqttc
     mqttc.publish('test', "0.25")
 
+url = "https://calendar.google.com/calendar/ical/5mvk2qo4dk7kp1vnum277hfar8%40group.calendar.google.com/public/basic.ics"
+c = Calendar(requests.get(url).text)
+
+for e in c.events:
+    print(e)
 
 # schedule.every(1).seconds.do(job)
 
