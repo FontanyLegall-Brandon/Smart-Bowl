@@ -81,7 +81,7 @@ mqtt_rasp.on_connect = on_connect
 mqtt_rasp.on_publish = on_publish
 mqtt_rasp.on_subscribe = on_subscribe
 
-mqtt_rasp.connect("raspberrypi.local", 1883)
+mqtt_rasp.connect("192.168.43.233", 1883)
 
 # Start subscribe, with QoS level 0
 mqtt_rasp.subscribe('smartbowl/camera-image', 0)
@@ -104,7 +104,7 @@ print(url_mqtt_cloud.port)
 cloud_mqtt.username_pw_set(url_mqtt_cloud.username, url_mqtt_cloud.password)
 cloud_mqtt.connect(url_mqtt_cloud.hostname, url_mqtt_cloud.port)
 
-cloud_mqtt.subscribe('ACTION')
+cloud_mqtt.subscribe('test')
 
 def sendBowlNewStatus():
     calendarStatus = calendarService.getCurrentEvent()
@@ -120,4 +120,5 @@ rc = 0
 rc_rasp = 0
 while rc == 0 and rc_rasp == 0:
     schedule.run_pending()
-    rc = mqtt_rasp.loop()
+    rc_rasp = mqtt_rasp.loop()
+    rc = cloud_mqtt.loop()
