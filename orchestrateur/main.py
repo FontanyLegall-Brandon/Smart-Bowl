@@ -1,8 +1,8 @@
 import paho.mqtt.client as mqtt
 import requests
 import schedule
-from orchestrateur.core.calendarService import CalendarService
-from orchestrateur.core.notificationService import NotificationService
+from core.calendarService import CalendarService
+from core.notificationService import NotificationService
 
 notificationService = NotificationService('tmahe.pro@gmail.com', "eivx9hcgxq@pomail.net")
 calendarService = CalendarService("https://calendar.google.com/calendar/ical/5mvk2qo4dk7kp1vnum277hfar8%40group.calendar.google.com/public/basic.ics")
