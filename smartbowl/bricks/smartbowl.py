@@ -10,13 +10,14 @@ class Smartbowl:
     motor = None
     camera = None
     supersonic = None
-    supersonicSchedule = 1
+    supersonicSchedule = 10
+    imageSchedule = 1
 
     def __init__(self, mqtt_rasp_url):
         self.motor = motor.Motor()
         self.camera = camera.Camera()
         self.supersonic = supersonic.Supersonic()
-
+        self.state = "CLOSED"
         self.shared_topics = ['test', 'bowl-action', 'picture', 'range-finder-signal']
 
         # Configure mqtt clients
@@ -43,7 +44,8 @@ class Smartbowl:
         print("rc_rasp: " + str(rc_rasp))
 
     def init_scheduled_tasks(self):
-        schedule.every(self.supersonicSchedule).seconds.do(self.publish_range_finder_signal)
+        schedule.every(self.supersonicSchedule).minutes.do(self.publish_range_finder_signal)
+        schedule.every(self.imageSchedule).minutes.do(self.publish_image)
 
     def register_callbacks(self):
         self.rasp_mqtt.on_message = self.on_message
@@ -52,28 +54,23 @@ class Smartbowl:
         self.rasp_mqtt.on_subscribe = self.on_subscribe
 
     def process_bowl_action(self, payload):
-        payload = json.loads(payload)
-        if payload['ACTION'] == "OPEN":
-            print("OPENING BOWL")
-            self.motor.open()
-        if payload['ACTION'] == "CLOSE":
-            print("MOCKUP : CLOSING BOWL")
-            self.motor.close()
-        if payload['ACTION'] == "TAKE PICTURE":
-            print("TAKING PICTURE")
-            imageName = self.camera.capture()
-            encoded = self.camera.encode(imageName)
-            print(encoded)
-            self.rasp_mqtt.publish('picture', encoded)
+        if payload == "SET_CLOSE":
+            if self.state == "OPEN":
+                self.motor.close()
+                self.state = "CLOSED"
+                self.rasp_mqtt.publish("smartbowl/bowl-state/update", "CLOSED")
 
+        if payload == "SET_OPEN":
+            if self.state == "CLOSED":
+                self.motor.open()
+                self.state = "OPEN"
+                self.rasp_mqtt.publish("smartbowl/bowl-state/update", "OPENED")
 
     def redirect_message(self, topic, qos, payload):
         payload = payload.decode('utf-8')
         print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))
 
-        if topic == "bowl-action":
-            self.process_bowl_action(payload)
-        if topic == "picture":
+        if topic == "smartbowl/bowl-state":
             self.process_bowl_action(payload)
 
     def on_connect(self, client, userdata, flags, rc):
@@ -94,6 +91,14 @@ class Smartbowl:
 
     def publish_range_finder_signal(self):
         print("supersonic : " + str(self.supersonic.detect()))
-        self.rasp_mqtt.publish('range-finder-signal', str(self.supersonic.detect()))
+        # TODO Tweak this "30" value to match with physical world
+        if self.supersonic.detect() > 30:
+            print("SENDING SIGNAL NO MORE FOOD")
+            self.rasp_mqtt.publish('smartbowl/bowl-state', "NO_FOOD")
+
+    def publish_image(self):
+        imageName = self.camera.capture()
+        encoded = self.camera.encode(imageName)
+        self.rasp_mqtt.publish('smartbowl/camera-image', encoded)
 
 Smartbowl(mqtt_rasp_url="mqtt://localhost:1883")
