@@ -12,13 +12,13 @@ class Smartbowl:
     supersonic = None
     supersonicSchedule = 10
     imageSchedule = 1
+    state = "CLOSED"
 
     def __init__(self, mqtt_rasp_url):
         self.motor = motor.Motor()
         self.camera = camera.Camera()
         self.supersonic = supersonic.Supersonic()
-        self.state = "CLOSED"
-        self.shared_topics = ['test', 'bowl-action', 'picture', 'range-finder-signal']
+        self.shared_topics = ['smartbowl/bowl-state']
 
         # Configure mqtt clients
         self.rasp_mqtt = mqtt.Client()
@@ -54,21 +54,24 @@ class Smartbowl:
         self.rasp_mqtt.on_subscribe = self.on_subscribe
 
     def process_bowl_action(self, payload):
+        print(self.state)
         if payload == "SET_CLOSE":
             if self.state == "OPEN":
+                print('CLOSING BOWL (payload="{}")'.format(payload))
                 self.motor.close()
                 self.state = "CLOSED"
                 self.rasp_mqtt.publish("smartbowl/bowl-state/update", "CLOSED")
 
         if payload == "SET_OPEN":
             if self.state == "CLOSED":
+                print('OPENING BOWL (payload="{}")'.format(payload))
                 self.motor.open()
                 self.state = "OPEN"
                 self.rasp_mqtt.publish("smartbowl/bowl-state/update", "OPENED")
 
     def redirect_message(self, topic, qos, payload):
         payload = payload.decode('utf-8')
-        print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))
+        #print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))
 
         if topic == "smartbowl/bowl-state":
             self.process_bowl_action(payload)
@@ -78,7 +81,7 @@ class Smartbowl:
 
     def on_message(self, client, obj, msg):
         self.redirect_message(topic=msg.topic, qos=msg.qos, payload=msg.payload)
-        print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+        #print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
     def on_publish(self, client, obj, mid):
         print("mid: " + str(mid))

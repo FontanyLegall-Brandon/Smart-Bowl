@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+from urllib.parse import urlparse
 import requests
 import schedule
 from core.calendarService import CalendarService
@@ -86,13 +87,30 @@ mqtt_rasp.connect("raspberrypi.local", 1883)
 mqtt_rasp.subscribe('smartbowl/camera-image', 0)
 mqtt_rasp.subscribe('smartbowl/bowl-state/update', 0)
 
-# Publish a message
+#cloudmqtt
+url_mqtt_cloud = urlparse("mqtt://ddlpfjur:xYB7g87hyXyF@hairdresser.cloudmqtt.com:18320")
+
+cloud_mqtt = mqtt.Client()
+cloud_mqtt.on_message = on_message
+cloud_mqtt.on_connect = on_connect
+cloud_mqtt.on_publish = on_publish
+cloud_mqtt.on_subscribe = on_subscribe
+
+print(url_mqtt_cloud.username)
+print(url_mqtt_cloud.password)
+print(url_mqtt_cloud.hostname)
+print(url_mqtt_cloud.port)
+
+cloud_mqtt.username_pw_set(url_mqtt_cloud.username, url_mqtt_cloud.password)
+cloud_mqtt.connect(url_mqtt_cloud.hostname, url_mqtt_cloud.port)
+
+cloud_mqtt.subscribe('ACTION')
 
 def sendBowlNewStatus():
-    status = calendarService.getCurrentEvent()
-    if status == "CLOSE":
+    calendarStatus = calendarService.getCurrentEvent()
+    if calendarStatus == "CLOSE":
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
-    if status == "OPEN":
+    if calendarStatus == "OPEN":
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_OPEN")
 
 schedule.every(5).seconds.do(sendBowlNewStatus)
