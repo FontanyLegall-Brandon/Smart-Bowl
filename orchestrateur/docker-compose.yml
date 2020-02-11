@@ -1,0 +1,18 @@
+version: "3"
+services:
+  broker:
+    image: eclipse-mosquitto:1.4.12
+    volumes:
+      - ./etc/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - localnet
+    ports:
+      - "1883:1883"
+  python:
+    build: .
+    networks:
+      - localnet
+    ports:
+      - "5000:5000"
+networks:
+  localnet:
