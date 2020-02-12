@@ -81,7 +81,10 @@ mqtt_rasp.on_connect = on_connect
 mqtt_rasp.on_publish = on_publish
 mqtt_rasp.on_subscribe = on_subscribe
 
-mqtt_rasp.connect("192.168.43.233", 1883)
+try:
+    mqtt_rasp.connect("raspberrypi.local", 1883)
+except:
+    print("Connection to raspberrypi not found")
 
 # Start subscribe, with QoS level 0
 mqtt_rasp.subscribe('smartbowl/camera-image', 0)
@@ -96,13 +99,13 @@ cloud_mqtt.on_connect = on_connect
 cloud_mqtt.on_publish = on_publish
 cloud_mqtt.on_subscribe = on_subscribe
 
-print(url_mqtt_cloud.username)
-print(url_mqtt_cloud.password)
-print(url_mqtt_cloud.hostname)
-print(url_mqtt_cloud.port)
+try:
+    cloud_mqtt.username_pw_set(url_mqtt_cloud.username, url_mqtt_cloud.password)
+    cloud_mqtt.connect(url_mqtt_cloud.hostname, url_mqtt_cloud.port)
+except:
+    print("Connection to cloudmqtt not found")
 
-cloud_mqtt.username_pw_set(url_mqtt_cloud.username, url_mqtt_cloud.password)
-cloud_mqtt.connect(url_mqtt_cloud.hostname, url_mqtt_cloud.port)
+
 
 cloud_mqtt.subscribe('test')
 
