@@ -1,21 +1,45 @@
+import json
+import threading
+
 import paho.mqtt.client as mqtt
 from urllib.parse import urlparse
 import requests
 import schedule
 from core.calendarService import CalendarService
 from core.notificationService import NotificationService
+import datetime
+
+schedules_jobs = {}
+__BOWL_CLOSE_LOCK__ = False
+__BOWL_OPEN_LOCK__ = False
 
 notificationService = NotificationService('tmahe.pro@gmail.com', "eivx9hcgxq@pomail.net")
 calendarService = CalendarService("https://calendar.google.com/calendar/ical/5mvk2qo4dk7kp1vnum277hfar8%40group.calendar.google.com/public/basic.ics")
 
+def run_threaded(job_func):
+    job_thread = threading.Thread(target=job_func)
+    job_thread.start()
+
 def sendToSmartBowl(msg):
     global mqttc
-    mqttc.publish('SMARTBOWL', msg)
+    mqtt_rasp.publish('SMARTBOWL', msg)
 
 def sendToClient(msg):
     global mqttc
-    mqttc.publish('CLIENT', msg)
+    cloud_mqtt.publish('CLIENT', msg)
 
+def open_bowl_job():
+    print("I'm running on thread %s" % threading.current_thread())
+    __BOWL_CLOSE_LOCK__ = False
+    if calendarService.getCurrentEvent() == "OPEN":
+        process_bowl_action("OPEN")
+    return schedule.CancelJob
+
+def close_bowl_job():
+    print("I'm running on thread %s" % threading.current_thread())
+    __BOWL_OPEN_LOCK__ = False
+    process_bowl_action("CLOSE")
+    return schedule.CancelJob
 
 def process_bowl_action(msg):
     if msg == "OPEN":
@@ -49,6 +73,54 @@ def process_image(base64img):
     requests.post(url, data=base64img, headers={'Content-Type': 'text/plain'})
     print("IMAGE UPDATED")
 
+def process_user_commands(payload):
+    j_object = json.loads(payload)
+    print(j_object)
+    if j_object['action'] == "OPEN":
+        __BOWL_OPEN_LOCK__ = True
+        __BOWL_CLOSE_LOCK__ = False
+        open_duration_minutes = j_object['duration']
+        delayed = datetime.datetime.now() + datetime.timedelta(seconds=open_duration_minutes)
+
+        run_threaded(open_bowl_job)
+
+        close_job = schedule.every().day.at("{}:{}:{}".format(delayed.hour,
+                                                              delayed.minute,
+                                                              delayed.second)).do(run_threaded, close_bowl_job)
+        if 'open_job' in schedules_jobs.keys():
+            # remove previous open command
+            schedule.cancel_job(schedules_jobs['open_job'])
+            schedules_jobs.pop('open_job')
+
+        if 'close_job' in schedules_jobs.keys():
+            # remove previous close command
+            schedule.cancel_job(schedules_jobs['close_job'])
+            schedules_jobs.pop('close_job')
+
+        schedules_jobs['close_job'] = close_job
+
+    if j_object['action'] == "CLOSE":
+        open_duration_minutes = j_object['duration']
+        delayed = datetime.datetime.now() + datetime.timedelta(seconds=open_duration_minutes)
+
+        run_threaded(close_bowl_job)
+
+        open_job = schedule.every().day.at("{}:{}:{}".format(delayed.hour,
+                                                              delayed.minute,
+                                                              delayed.second)).do(run_threaded, open_bowl_job)
+        schedules_jobs['open_job'] = open_job
+        # release lock
+        __BOWL_CLOSE_LOCK__ = True
+        __BOWL_OPEN_LOCK__ = False
+        if 'close_job' in schedules_jobs.keys():
+            schedule.cancel_job(schedules_jobs['close_job'])
+            schedules_jobs.pop('close_job')
+
+        if 'open_job' in schedules_jobs.keys():
+            schedule.cancel_job(schedules_jobs['open_job'])
+            schedules_jobs.pop('open_job')
+
+
 
 def redirect_message(topic, qos, payload):
     print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))
@@ -57,6 +129,8 @@ def redirect_message(topic, qos, payload):
         process_image(payload)
     elif topic == "smartbowl/bowl-state":
         process_bowl_status(payload.decode('utf-8'))
+    elif topic == "smartbowl/commands":
+        process_user_commands(payload.decode('utf-8'))
 
 
 # Define event callbacks
@@ -84,6 +158,9 @@ mqtt_rasp.on_subscribe = on_subscribe
 try:
     mqtt_rasp.connect("raspberrypi.local", 1883)
 except:
+    print("DEV MODE - RASP UNREACHABLE")
+    print("MQTT_RASP REDIRECTED TO localhost")
+    mqtt_rasp.connect("localhost", 1883)
     print("Connection to raspberrypi not found")
 
 # Start subscribe, with QoS level 0
@@ -107,13 +184,13 @@ except:
 
 
 
-cloud_mqtt.subscribe('test')
+cloud_mqtt.subscribe('smartbowl/commands')
 
 def sendBowlNewStatus():
     calendarStatus = calendarService.getCurrentEvent()
-    if calendarStatus == "CLOSE":
+    if calendarStatus == "CLOSE" and not __BOWL_OPEN_LOCK__:
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
-    if calendarStatus == "OPEN":
+    if calendarStatus == "OPEN" and not __BOWL_CLOSE_LOCK__:
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_OPEN")
 
 schedule.every(5).seconds.do(sendBowlNewStatus)
@@ -123,5 +200,6 @@ rc = 0
 rc_rasp = 0
 while rc == 0 and rc_rasp == 0:
     schedule.run_pending()
+
     rc_rasp = mqtt_rasp.loop()
     rc = cloud_mqtt.loop()
