@@ -92,7 +92,7 @@ def process_user_commands(payload):
         __BOWL_OPEN_LOCK__ = True
         __BOWL_CLOSE_LOCK__ = False
         open_duration_minutes = j_object['duration']
-        delayed = datetime.datetime.now() + datetime.timedelta(seconds=open_duration_minutes)
+        delayed = datetime.datetime.now() + datetime.timedelta(minutes=open_duration_minutes)
 
         run_threaded(open_bowl_job)
 
@@ -118,7 +118,7 @@ def process_user_commands(payload):
         __BOWL_OPEN_LOCK__ = False
         open_duration_minutes = j_object['duration']
 
-        delayed = datetime.datetime.now() + datetime.timedelta(seconds=open_duration_minutes)
+        delayed = datetime.datetime.now() + datetime.timedelta(minutes=open_duration_minutes)
 
         run_threaded(close_bowl_job)
 
