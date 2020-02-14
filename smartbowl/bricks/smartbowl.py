@@ -4,6 +4,8 @@ import schedule
 import motor
 import camera
 import supersonic
+import motor_dropper
+
 
 class Smartbowl:
     motor = None
@@ -15,6 +17,8 @@ class Smartbowl:
 
     def __init__(self, mqtt_rasp_url):
         self.motor = motor.Motor()
+        self.motor_dropper = motor_dropper.MotorDropper()
+        self.motor_dropper.drop()
         self.camera = camera.Camera()
         self.supersonic = supersonic.Supersonic()
         self.shared_topics = ['smartbowl/bowl-state']
