@@ -71,6 +71,12 @@ class Smartbowl:
                 self.state = "OPEN"
                 self.rasp_mqtt.publish("smartbowl/bowl-state/update", "OPENED")
 
+        if "DROP" in payload:
+            if self.state == "CLOSED":
+                print('DROP (payload="{}")'.format(payload))
+                for i in range(int(payload.split(' ')[1])):
+                    self.motor_dropper.drop()
+
     def redirect_message(self, topic, qos, payload):
         payload = payload.decode('utf-8')
         #print('RECEIVE topic="{}" qos="{}" \n\tpayload="{}"'.format(topic, qos, payload))

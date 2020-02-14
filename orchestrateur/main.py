@@ -29,26 +29,32 @@ def sendToClient(msg):
     cloud_mqtt.publish('CLIENT', msg)
 
 def open_bowl_job():
-    print("I'm running on thread %s" % threading.current_thread())
+    global __BOWL_CLOSE_LOCK__
+    print("Running scheduled open command")
     __BOWL_CLOSE_LOCK__ = False
     if calendarService.getCurrentEvent() == "OPEN":
         process_bowl_action("OPEN")
     return schedule.CancelJob
 
 def close_bowl_job():
-    print("I'm running on thread %s" % threading.current_thread())
+    global __BOWL_OPEN_LOCK__
+    print("Running scheduled close command")
     __BOWL_OPEN_LOCK__ = False
     process_bowl_action("CLOSE")
     return schedule.CancelJob
 
+def drop_job(dose):
+    process_bowl_action("DROP {}".format(dose))
+
 def process_bowl_action(msg):
     if msg == "OPEN":
-        print("MOCKUP : OPENING BOWL")
+        mqtt_rasp.publish("smartbowl/bowl-state", "SET_OPEN")
     elif msg == "CLOSE":
-        print("MOCKUP : CLOSING BOWL")
+       mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
     elif 'DROP' in msg:
-        dose = msg[len(msg) - 1:]
-        print('DROP ' + dose + ': DROPING FOOD')
+        mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
+        print(msg + ': DROPING FOOD')
+        mqtt_rasp.publish("smartbowl/bowl-state", msg)
     else:
         return
     sendToSmartBowl(msg)
@@ -74,8 +80,14 @@ def process_image(base64img):
     print("IMAGE UPDATED")
 
 def process_user_commands(payload):
+    global __BOWL_CLOSE_LOCK__
+    global __BOWL_OPEN_LOCK__
     j_object = json.loads(payload)
     print(j_object)
+    if j_object['action'] == "DROP":
+        count = j_object['dose']
+        drop_job(count)
+
     if j_object['action'] == "OPEN":
         __BOWL_OPEN_LOCK__ = True
         __BOWL_CLOSE_LOCK__ = False
@@ -100,7 +112,12 @@ def process_user_commands(payload):
         schedules_jobs['close_job'] = close_job
 
     if j_object['action'] == "CLOSE":
+
+        __BOWL_CLOSE_LOCK__ = True
+        print("CLOSE LOCK UPDATE", __BOWL_CLOSE_LOCK__)
+        __BOWL_OPEN_LOCK__ = False
         open_duration_minutes = j_object['duration']
+
         delayed = datetime.datetime.now() + datetime.timedelta(seconds=open_duration_minutes)
 
         run_threaded(close_bowl_job)
@@ -108,10 +125,9 @@ def process_user_commands(payload):
         open_job = schedule.every().day.at("{}:{}:{}".format(delayed.hour,
                                                               delayed.minute,
                                                               delayed.second)).do(run_threaded, open_bowl_job)
-        schedules_jobs['open_job'] = open_job
+
         # release lock
-        __BOWL_CLOSE_LOCK__ = True
-        __BOWL_OPEN_LOCK__ = False
+
         if 'close_job' in schedules_jobs.keys():
             schedule.cancel_job(schedules_jobs['close_job'])
             schedules_jobs.pop('close_job')
@@ -120,6 +136,7 @@ def process_user_commands(payload):
             schedule.cancel_job(schedules_jobs['open_job'])
             schedules_jobs.pop('open_job')
 
+        schedules_jobs['open_job'] = open_job
 
 
 def redirect_message(topic, qos, payload):
@@ -187,6 +204,9 @@ except:
 cloud_mqtt.subscribe('smartbowl/commands')
 
 def sendBowlNewStatus():
+    global __BOWL_CLOSE_LOCK__
+    global __BOWL_OPEN_LOCK__
+    print(schedules_jobs)
     calendarStatus = calendarService.getCurrentEvent()
     print("CLOSE LOCK :", __BOWL_CLOSE_LOCK__)
     print("OPEN LOCK :", __BOWL_OPEN_LOCK__)
@@ -195,7 +215,7 @@ def sendBowlNewStatus():
     if calendarStatus == "OPEN" and not __BOWL_CLOSE_LOCK__:
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_OPEN")
 
-schedule.every(5).seconds.do(sendBowlNewStatus)
+schedule.every(10).seconds.do(sendBowlNewStatus)
 
 # Continue the network loop, exit when an error occurs
 rc = 0

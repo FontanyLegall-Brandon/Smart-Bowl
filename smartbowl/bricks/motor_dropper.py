@@ -45,7 +45,8 @@ class MotorDropper :
             self.MotorDirectionSet(0b1001)
 
     def drop(self):
-        self.step('CLK', 400)
+        self.step('CLK', 200)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
