@@ -1,6 +1,5 @@
 import paho.mqtt.client as mqtt
 from urlparse import urlparse
-import json
 import schedule
 import motor
 import camera
@@ -10,7 +9,7 @@ class Smartbowl:
     motor = None
     camera = None
     supersonic = None
-    supersonicSchedule = 10
+    supersonicSchedule = 1
     imageSchedule = 1
     state = "CLOSED"
 
@@ -32,7 +31,6 @@ class Smartbowl:
             self.rasp_mqtt.subscribe(topic)
 
         self.start()
-
 
     def start(self):
         # Continue the network loop, exit when an error occurs

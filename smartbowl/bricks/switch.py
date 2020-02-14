@@ -1,7 +1,7 @@
 import grovepi
 
 class Switch:
-    button = 2
+    button = 3
 
     def isPressed(self):
         return grovepi.digitalRead(self.button) == 1

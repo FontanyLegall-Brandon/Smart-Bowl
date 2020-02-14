@@ -5,7 +5,7 @@ from grovepi import *
 # Connect the Grove Ultrasonic Ranger to digital port D4 # SIG,NC,VCC,GND
 
 class Supersonic:
-    ultrasonic_ranger = 3
+    ultrasonic_ranger = 2
 
     def detect(self):
         try:

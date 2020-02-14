@@ -188,6 +188,8 @@ cloud_mqtt.subscribe('smartbowl/commands')
 
 def sendBowlNewStatus():
     calendarStatus = calendarService.getCurrentEvent()
+    print("CLOSE LOCK :", __BOWL_CLOSE_LOCK__)
+    print("OPEN LOCK :", __BOWL_OPEN_LOCK__)
     if calendarStatus == "CLOSE" and not __BOWL_OPEN_LOCK__:
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
     if calendarStatus == "OPEN" and not __BOWL_CLOSE_LOCK__:

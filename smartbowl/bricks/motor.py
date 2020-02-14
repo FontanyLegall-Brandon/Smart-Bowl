@@ -13,14 +13,14 @@ class Motor:
             time.sleep(1)
             try:
                 self.motor = grove_i2c_motor_driver.motor_driver(address=0x0f)
-                self.motor.MotorSpeedSetAB(100, 100)
+                self.motor.MotorSpeedSetAB(255, 255)
             except IOError:
                 continue
             self.con = True
         while not self.switch.isPressed():
             print(self.switch.isPressed())
 
-            self.step('CLK', 4)
+            self.step('CLK', 8)
         self.motor.MotorSpeedSetAB(0, 0)
 
     def interstep(self):
@@ -40,16 +40,22 @@ class Motor:
             self.motor.MotorDirectionSet(0b1010)
             self.motor.MotorDirectionSet(0b1000)
             self.motor.MotorDirectionSet(0b1001)
-            self.interstep()
+
+            #self.interstep()
 
         #self.motor.MotorSpeedSetAB(0, 0)
         #self.motor.MotorDirectionSet(0b0001)
 
     def open(self):
-        self.step('CLK', 400)
+        self.step('CLK', 200)
 
     def close(self):
-        self.step('CLK', 400)
+        while not self.switch.isPressed():
+            print(self.switch.isPressed())
+
+            self.step('CLK', 8)
+        self.step('CLK', 8)
+        self.motor.MotorSpeedSetAB(0, 0)
 
 
 if __name__ == "__main__":
