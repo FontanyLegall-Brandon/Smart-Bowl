@@ -67,6 +67,8 @@ class Smartbowl:
         if payload == "SET_OPEN":
             if self.state == "CLOSED":
                 print('OPENING BOWL (payload="{}")'.format(payload))
+                self.motor_dropper.drop()
+                self.motor_dropper.drop()
                 self.motor.open()
                 self.state = "OPEN"
                 self.rasp_mqtt.publish("smartbowl/bowl-state/update", "OPENED")

@@ -213,7 +213,6 @@ def sendBowlNewStatus():
     if calendarStatus == "CLOSE" and not __BOWL_OPEN_LOCK__:
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_CLOSE")
     if calendarStatus == "OPEN" and not __BOWL_CLOSE_LOCK__:
-        drop_job(5)
         mqtt_rasp.publish("smartbowl/bowl-state", "SET_OPEN")
 
 schedule.every(10).seconds.do(sendBowlNewStatus)
