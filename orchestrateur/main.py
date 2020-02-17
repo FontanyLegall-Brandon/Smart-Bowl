@@ -223,5 +223,8 @@ rc_rasp = 0
 while True:
     schedule.run_pending()
 
-    mqtt_rasp.loop()
+    rc_rasp = mqtt_rasp.loop()
     cloud_mqtt.loop()
+
+    if rc_rasp != 0:
+        mqtt_rasp.connect("raspberrypi.local", 1883)
