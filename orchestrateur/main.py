@@ -32,8 +32,7 @@ def open_bowl_job():
     global __BOWL_CLOSE_LOCK__
     print("Running scheduled open command")
     __BOWL_CLOSE_LOCK__ = False
-    if calendarService.getCurrentEvent() == "OPEN":
-        process_bowl_action("OPEN")
+    process_bowl_action("OPEN")
     return schedule.CancelJob
 
 def close_bowl_job():
@@ -144,7 +143,7 @@ def redirect_message(topic, qos, payload):
 
     if topic == "smartbowl/camera-image":
         process_image(payload)
-    elif topic == "smartbowl/bowl-state":
+    elif topic == "smartbowl/bowl-state/update":
         process_bowl_status(payload.decode('utf-8'))
     elif topic == "smartbowl/commands":
         process_user_commands(payload.decode('utf-8'))
@@ -220,8 +219,9 @@ schedule.every(10).seconds.do(sendBowlNewStatus)
 # Continue the network loop, exit when an error occurs
 rc = 0
 rc_rasp = 0
-while rc == 0 and rc_rasp == 0:
+
+while True:
     schedule.run_pending()
 
-    rc_rasp = mqtt_rasp.loop()
-    rc = cloud_mqtt.loop()
+    mqtt_rasp.loop()
+    cloud_mqtt.loop()
