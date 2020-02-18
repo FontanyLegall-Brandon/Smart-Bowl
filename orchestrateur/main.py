@@ -145,6 +145,8 @@ def redirect_message(topic, qos, payload):
         process_image(payload)
     elif topic == "smartbowl/bowl-state/update":
         process_bowl_status(payload.decode('utf-8'))
+    elif topic == "smartbowl/bowl-state":
+        process_bowl_status(payload.decode('utf-8'))
     elif topic == "smartbowl/commands":
         process_user_commands(payload.decode('utf-8'))
 
@@ -182,6 +184,7 @@ except:
 # Start subscribe, with QoS level 0
 mqtt_rasp.subscribe('smartbowl/camera-image', 0)
 mqtt_rasp.subscribe('smartbowl/bowl-state/update', 0)
+mqtt_rasp.subscribe('smartbowl/bowl-state', 0)
 
 #cloudmqtt
 url_mqtt_cloud = urlparse("mqtt://ddlpfjur:xYB7g87hyXyF@hairdresser.cloudmqtt.com:18320")
